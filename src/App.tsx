@@ -9,6 +9,8 @@ import { useFirebase } from './components/FirebaseProvider';
 import { db } from './lib/firebase';
 import { doc, getDoc, updateDoc, setDoc, serverTimestamp, collection } from 'firebase/firestore';
 import { buildPersonalBrain } from './lib/learner';
+import { buildLiveContext, LiveContext, invalidateContextCache } from './lib/contextService';
+import { weatherIcon } from './lib/weatherService';
 
 import { SettingsWizard } from './components/SettingsWizard';
 
@@ -35,6 +37,7 @@ function App() {
   const [ridesTrained, setRidesTrained] = useState(0);
   const [showWizard, setShowWizard] = useState(false);
   const [brainState, setBrainState] = useState<PersonalBrainState | null>(null);
+  const [liveContext, setLiveContext] = useState<LiveContext | null>(null);
   const [showProModal, setShowProModal] = useState(false);
   const [isPro, setIsPro] = useState(false); // Simulated Pro Plan Access
   const [customStops, setCustomStops] = useState<import('./types').TrailStep[]>([]);
@@ -153,6 +156,28 @@ function App() {
         clearTimeout(timeoutId);
      };
   }, [gpsLocation?.lat, gpsLocation?.lng]);
+
+  // ── Live Context: real weather + holiday + nearby POIs ────────────────────
+  // Runs when GPS position changes significantly. Updates every ~8 minutes.
+  useEffect(() => {
+    if (!effectiveGpsLocation) return;
+    let cancelled = false;
+
+    const timeoutId = setTimeout(() => {
+      const { lat, lng } = effectiveGpsLocation;
+      const neighborhood = manualNeighborhood || realNeighborhood;
+
+      buildLiveContext(lat, lng, neighborhood)
+        .then(ctx => { if (!cancelled) setLiveContext(ctx); })
+        .catch(e => console.warn('[LiveContext] Failed:', e));
+    }, 3000); // debounce 3s after GPS settles
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeoutId);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [effectiveGpsLocation?.lat, effectiveGpsLocation?.lng, realNeighborhood]);
 
   // Auto-save active profile/category selection whenever the user changes them
   useEffect(() => {
@@ -391,7 +416,7 @@ function App() {
        dayOfWeek: ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'][now.getDay()],
        timeOfDay: currentPeriod,
        exactTime: `${hours.toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`,
-       weather: 'Limpo', // Can be fetched from real weather API in real app
+       weather: liveContext?.weatherData.weather ?? 'Limpo', // Real weather from Open-Meteo
        pickupNeighborhood: currentNeighborhood,
     };
 
@@ -502,15 +527,28 @@ function App() {
         </div>
       </header>
 
-      {/* TACTICAL STATUS OVERLAY */}
+      {/* TACTICAL STATUS OVERLAY — dados reais */}
       <div className="bg-black text-[10px] sm:text-xs text-white px-4 py-1.5 flex justify-between items-center border-b border-yellow-500/30 font-mono tracking-widest z-10">
         <div className="flex items-center gap-2">
-          <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
-          OPERANDO: {activeCategory.name}
+          <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${liveContext ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
+          {liveContext
+            ? `${liveContext.weatherEmoji} ${liveContext.weatherData.tempC}°C · ${liveContext.weatherData.description}`
+            : `OPERANDO: ${activeCategory.name}`}
         </div>
-        <div className="flex gap-4">
-          <span className="text-[#f9ab00]">LUCRO/H: R$ 54.20</span>
-          <span className="text-blue-400">EFIC: 98%</span>
+        <div className="flex gap-3 items-center">
+          {liveContext?.holidayName && (
+            <span className="text-purple-400 hidden sm:inline">📅 {liveContext.holidayName}</span>
+          )}
+          <span className={
+            liveContext?.demandLevel === 'muito_alta' ? 'text-red-400' :
+            liveContext?.demandLevel === 'alta'       ? 'text-[#f9ab00]' :
+            liveContext?.demandLevel === 'baixa'      ? 'text-slate-400' :
+                                                        'text-green-400'
+          }>
+            {liveContext
+              ? `${liveContext.demandLabel.replace(/^[^\s]+ /, '')} (${Math.round((liveContext.demandMultiplier) * 100)}%)`
+              : 'Carregando...'}
+          </span>
         </div>
       </div>
 
@@ -609,6 +647,90 @@ function App() {
             <div className="relative z-10 flex-1 bg-[#f8f9fa] rounded-t-3xl pt-8 px-4 pb-28 space-y-6 border-t-2 border-[#dadce0] shadow-[0_-8px_30px_rgba(0,0,0,0.1)] -mt-6">
                {/* Drag detail */}
                <div className="absolute top-3 left-1/2 -translate-x-1/2 w-14 h-1.5 bg-[#f1f3f4] rounded-full"></div>
+
+               {/* ── CONTEXTO AGORA — dados reais ── */}
+               {liveContext && (
+                 <div className="rounded-2xl border border-[#dadce0] overflow-hidden bg-white shadow-sm">
+                   {/* Header */}
+                   <div className={`px-4 py-2 flex items-center justify-between
+                     ${liveContext.demandLevel === 'muito_alta' ? 'bg-red-600' :
+                       liveContext.demandLevel === 'alta'       ? 'bg-[#f9ab00]' :
+                       liveContext.demandLevel === 'baixa'      ? 'bg-slate-500' :
+                                                                   'bg-[#1e8e3e]'}`}>
+                     <div className="flex items-center gap-2 text-white">
+                       <Activity className="w-4 h-4" />
+                       <span className="font-black text-xs uppercase tracking-widest">Contexto Agora</span>
+                     </div>
+                     <div className="flex items-center gap-2 text-white/90 text-xs font-bold">
+                       <span>{liveContext.weatherEmoji} {liveContext.weatherData.tempC}°C</span>
+                       {liveContext.weatherData.precipitation > 0 && (
+                         <span className="bg-white/20 px-2 py-0.5 rounded-full">
+                           💧 {liveContext.weatherData.precipitation}mm
+                         </span>
+                       )}
+                     </div>
+                   </div>
+
+                   {/* Demand bar */}
+                   <div className="px-4 pt-3 pb-1">
+                     <div className="flex items-center justify-between mb-1.5">
+                       <span className="text-xs font-black text-slate-700">{liveContext.demandLabel}</span>
+                       <span className="text-xs font-bold text-slate-500">
+                         {Math.round(liveContext.demandMultiplier * 100)}% do normal
+                       </span>
+                     </div>
+                     <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                       <div
+                         className={`h-full rounded-full transition-all duration-700
+                           ${liveContext.demandLevel === 'muito_alta' ? 'bg-red-500' :
+                             liveContext.demandLevel === 'alta'       ? 'bg-[#f9ab00]' :
+                             liveContext.demandLevel === 'baixa'      ? 'bg-slate-400' :
+                                                                         'bg-[#1e8e3e]'}`}
+                         style={{ width: `${Math.min(100, Math.round(liveContext.demandMultiplier * 50))}%` }}
+                       />
+                     </div>
+                   </div>
+
+                   {/* Insights */}
+                   <div className="px-4 pb-3 pt-2 space-y-1.5">
+                     {liveContext.contextInsights.map((insight, i) => (
+                       <p key={i} className="text-xs text-slate-600 leading-snug">{insight}</p>
+                     ))}
+
+                     {/* POI badges */}
+                     {(liveContext.pois.bars > 0 || liveContext.pois.stadiums > 0 ||
+                       liveContext.pois.universities > 0 || liveContext.pois.airports > 0 ||
+                       liveContext.pois.hospitals > 0) && (
+                       <div className="flex flex-wrap gap-1.5 mt-2">
+                         {liveContext.pois.airports > 0 && (
+                           <span className="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full">✈️ Aeroporto</span>
+                         )}
+                         {liveContext.pois.stadiums > 0 && (
+                           <span className="bg-purple-100 text-purple-700 text-[10px] font-bold px-2 py-0.5 rounded-full">🏟️ {liveContext.pois.stadiums} arena(s)</span>
+                         )}
+                         {liveContext.pois.universities > 0 && (
+                           <span className="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-full">🎓 {liveContext.pois.universities} fac.</span>
+                         )}
+                         {liveContext.pois.bars > 0 && (
+                           <span className="bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-full">🍺 {liveContext.pois.bars} bares</span>
+                         )}
+                         {liveContext.pois.hospitals > 0 && (
+                           <span className="bg-red-100 text-red-700 text-[10px] font-bold px-2 py-0.5 rounded-full">🏥 {liveContext.pois.hospitals} hosp.</span>
+                         )}
+                       </div>
+                     )}
+                   </div>
+
+                   {/* Footer: last updated */}
+                   <div className="border-t border-[#f1f3f4] px-4 py-1.5 text-[9px] font-mono text-slate-400 flex justify-between">
+                     <span>Atualizado {liveContext.refreshedAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                     <span>Open-Meteo · OpenStreetMap</span>
+                   </div>
+                 </div>
+               )}
+
+               {/* ── FIM CONTEXTO AGORA ── */}
+
                {/* ASSISTENT GAMIFIED COPILOT */}
                <div className="bg-gradient-to-br from-[#1a73e8] via-[#1a73e8] to-[#1557b0] rounded-2xl p-5 shadow-xl relative overflow-hidden flex flex-col gap-3 text-white border-b-4 border-black/20">
                   <div className="absolute top-0 right-0 -mr-6 -mt-6 opacity-10">
