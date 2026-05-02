@@ -11,14 +11,19 @@ export default defineConfig(({mode}) => {
       'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
     },
     build: {
+      target: 'esnext',
       rollupOptions: {
         output: {
           manualChunks: {
             'react-vendor': ['react', 'react-dom'],
-            'wizard': ['./src/components/SettingsWizard.tsx'],
           },
         },
       },
+    },
+    esbuild: {
+      // Disable identifier minification to prevent naming collisions
+      // between React internals (var Re, Ne, etc.) and app code
+      minifyIdentifiers: false,
     },
     resolve: {
       alias: {
