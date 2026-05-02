@@ -243,6 +243,17 @@ const GOAL_PRESETS = [150, 200, 300, 400, 500];
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
+// ─── Step titles (module-level to avoid minification name conflicts) ──────────
+const WIZARD_STEP_TITLES: Record<number, string> = {
+  1: 'Seu Perfil',
+  2: 'Seu Veículo',
+  3: 'Quando você trabalha?',
+  4: 'O que você aceita?',
+  5: 'Sua abordagem de segurança?',
+  6: 'Qual sua meta diária?',
+  7: 'Tudo Certo! 🎉',
+};
+
 export function SettingsWizard({ onClose, onSave }: SettingsWizardProps) {
   const { user } = useFirebase();
   const [step, setStep] = useState(1);
@@ -426,16 +437,7 @@ export function SettingsWizard({ onClose, onSave }: SettingsWizardProps) {
     </div>
   );
 
-  // Step title map
-  const STEP_TITLES: Record<number, string> = {
-    1: 'Seu Perfil',
-    2: 'Seu Veículo',
-    3: 'Quando você trabalha?',
-    4: 'O que você aceita?',
-    5: 'Sua abordagem de segurança?',
-    6: 'Qual sua meta diária?',
-    7: 'Tudo Certo! 🎉',
-  };
+
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
@@ -457,7 +459,7 @@ export function SettingsWizard({ onClose, onSave }: SettingsWizardProps) {
             <span className="text-xs font-black text-[#1a73e8] uppercase tracking-widest">PRÉCHECA</span>
           </div>
           <h2 className="text-2xl font-black text-slate-800 mb-6">
-            {STEP_TITLES[step]}
+            {WIZARD_STEP_TITLES[step]}
           </h2>
 
           <ProgressDots />
