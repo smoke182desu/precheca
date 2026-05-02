@@ -4,7 +4,7 @@ import 'leaflet/dist/leaflet.css';
 import { Settings, Map, LayoutDashboard, Zap, CheckCircle2, XCircle, MapPin, Navigation, CarFront, AlertTriangle, Play, Loader2, Route, Clock, Target, CalendarDays, ShieldCheck, Network, Cpu, ArrowRight, TrendingUp, TrendingDown, Minus, Database, Activity, Fingerprint, BrainCircuit, History, Compass, ArrowUp, Info, LogOut, Satellite, CloudRain, Hexagon, Component, Radio, Search, RotateCcw, Lock, Share2, Crown, Ticket } from 'lucide-react';
 import { PROFILES, CATEGORIES, getHotspotsForProfile, getTrailForProfile, simulateIncomingRide, analyzeRide } from './lib/analyzer';
 import { playAcceptSound, playRejectSound } from './lib/audio';
-import { DriverProfile, RideAnalysis, RideAnalysisV2, Hotspot, VehicleCategory, PersonalBrainState } from './types';
+import { DriverProfile, RideAnalysis, Hotspot, VehicleCategory, PersonalBrainState } from './types';
 import { useFirebase } from './components/FirebaseProvider';
 import { db } from './lib/firebase';
 import { doc, getDoc, updateDoc, setDoc, serverTimestamp, collection } from 'firebase/firestore';
