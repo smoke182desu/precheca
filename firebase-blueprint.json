@@ -1,0 +1,47 @@
+{
+  "entities": {
+    "UserProfile": {
+       "title": "UserProfile",
+       "description": "User profile and AI preferences for the driver",
+       "type": "object",
+       "properties": {
+          "email": { "type": "string" },
+          "displayName": { "type": "string" },
+          "activeProfileId": { "type": "string" },
+          "activeCategoryId": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+       },
+       "required": ["email", "createdAt", "updatedAt"]
+    },
+    "RideRecord": {
+       "title": "RideRecord",
+       "description": "Historical ride data analyzed by the user to build the personalized AI.",
+       "type": "object",
+       "properties": {
+          "rideId": { "type": "string" },
+          "userId": { "type": "string" },
+          "status": { "type": "string", "enum": ["accepted", "rejected", "ignored"] },
+          "totalPrice": { "type": "number" },
+          "pricePerKm": { "type": "number" },
+          "pricePerHour": { "type": "number" },
+          "pickupNeighborhood": { "type": "string" },
+          "dayOfWeek": { "type": "string" },
+          "timeOfDay": { "type": "string" },
+          "weather": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" }
+       },
+       "required": ["userId", "status", "totalPrice", "pickupNeighborhood", "createdAt"]
+    }
+  },
+  "firestore": {
+     "/users/{userId}": {
+        "schema": { "$ref": "#/entities/UserProfile" },
+        "description": "Stores core driver preferences and metadata."
+     },
+     "/users/{userId}/rides/{rideId}": {
+        "schema": { "$ref": "#/entities/RideRecord" },
+        "description": "Stores historical decisions on rides by this driver to train the AI."
+     }
+  }
+}

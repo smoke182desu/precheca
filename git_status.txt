@@ -1,0 +1,98 @@
+On branch master
+
+No commits yet
+
+Changes to be committed:
+  (use "git rm --cached <file>..." to unstage)
+	new file:   .env.example
+	new file:   .gitignore
+	new file:   README.md
+	new file:   android/.gitignore
+	new file:   android/app/.gitignore
+	new file:   android/app/build.gradle
+	new file:   android/app/capacitor.build.gradle
+	new file:   android/app/proguard-rules.pro
+	new file:   android/app/src/androidTest/java/com/getcapacitor/myapp/ExampleInstrumentedTest.java
+	new file:   android/app/src/main/AndroidManifest.xml
+	new file:   android/app/src/main/java/com/rotautil/app/MainActivity.java
+	new file:   android/app/src/main/res/drawable-land-hdpi/splash.png
+	new file:   android/app/src/main/res/drawable-land-mdpi/splash.png
+	new file:   android/app/src/main/res/drawable-land-xhdpi/splash.png
+	new file:   android/app/src/main/res/drawable-land-xxhdpi/splash.png
+	new file:   android/app/src/main/res/drawable-land-xxxhdpi/splash.png
+	new file:   android/app/src/main/res/drawable-port-hdpi/splash.png
+	new file:   android/app/src/main/res/drawable-port-mdpi/splash.png
+	new file:   android/app/src/main/res/drawable-port-xhdpi/splash.png
+	new file:   android/app/src/main/res/drawable-port-xxhdpi/splash.png
+	new file:   android/app/src/main/res/drawable-port-xxxhdpi/splash.png
+	new file:   android/app/src/main/res/drawable-v24/ic_launcher_foreground.xml
+	new file:   android/app/src/main/res/drawable/ic_launcher_background.xml
+	new file:   android/app/src/main/res/drawable/splash.png
+	new file:   android/app/src/main/res/layout/activity_main.xml
+	new file:   android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+	new file:   android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+	new file:   android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+	new file:   android/app/src/main/res/mipmap-hdpi/ic_launcher_foreground.png
+	new file:   android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png
+	new file:   android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+	new file:   android/app/src/main/res/mipmap-mdpi/ic_launcher_foreground.png
+	new file:   android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png
+	new file:   android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+	new file:   android/app/src/main/res/mipmap-xhdpi/ic_launcher_foreground.png
+	new file:   android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png
+	new file:   android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+	new file:   android/app/src/main/res/mipmap-xxhdpi/ic_launcher_foreground.png
+	new file:   android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png
+	new file:   android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+	new file:   android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png
+	new file:   android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
+	new file:   android/app/src/main/res/values/ic_launcher_background.xml
+	new file:   android/app/src/main/res/values/strings.xml
+	new file:   android/app/src/main/res/values/styles.xml
+	new file:   android/app/src/main/res/xml/file_paths.xml
+	new file:   android/app/src/test/java/com/getcapacitor/myapp/ExampleUnitTest.java
+	new file:   android/build.gradle
+	new file:   android/capacitor.settings.gradle
+	new file:   android/gradle.properties
+	new file:   android/gradle/wrapper/gradle-wrapper.jar
+	new file:   android/gradle/wrapper/gradle-wrapper.properties
+	new file:   android/gradlew
+	new file:   android/gradlew.bat
+	new file:   android/settings.gradle
+	new file:   android/variables.gradle
+	new file:   apply-google-palette.cjs
+	new file:   capacitor.config.ts
+	new file:   classes.txt
+	new file:   firebase-applet-config.json
+	new file:   firebase-blueprint.json
+	new file:   firestore.rules
+	new file:   fix-hovers.cjs
+	new file:   fix-legibility.cjs
+	new file:   fix_tabs.cjs
+	new file:   index.html
+	new file:   metadata.json
+	new file:   package-lock.json
+	new file:   package.json
+	new file:   rewrite-hud.cjs
+	new file:   rewrite.cjs
+	new file:   src/App.tsx
+	new file:   src/components/EventsDashboard.tsx
+	new file:   src/components/EvolutionDashboard.tsx
+	new file:   src/components/FirebaseProvider.tsx
+	new file:   src/components/SettingsWizard.tsx
+	new file:   src/index.css
+	new file:   src/lib/analyzer.ts
+	new file:   src/lib/audio.ts
+	new file:   src/lib/cityKnowledge.ts
+	new file:   src/lib/firebase.ts
+	new file:   src/lib/learner.ts
+	new file:   src/lib/safetyRules.ts
+	new file:   src/main.tsx
+	new file:   src/types.ts
+	new file:   tsconfig.json
+	new file:   vite.config.ts
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	git_status.txt
+

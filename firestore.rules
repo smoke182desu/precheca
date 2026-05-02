@@ -1,0 +1,198 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─── 0. Global safety net ────────────────────────────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ─── Test connection (health check) ─────────────────────────────────────
+    match /test/connection {
+      allow get: if true;
+    }
+
+    // ─── Helpers ─────────────────────────────────────────────────────────────
+    function isSignedIn()    { return request.auth != null; }
+    function isOwner(uid)    { return isSignedIn() && request.auth.uid == uid; }
+    function incoming()      { return request.resource.data; }
+    function existing()      { return resource.data; }
+
+    function isValidId(id) {
+      return id is string
+          && id.size() > 0
+          && id.size() <= 128
+          && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // ─── User profile ─────────────────────────────────────────────────────────
+    //
+    // Stores: preferences + learned thresholds (from learner.ts).
+    // Learned thresholds are computed client-side and persisted here as a cache,
+    // so the brain doesn't need to re-fetch all rides on every session start.
+    //
+    function isValidUserProfile(data) {
+      return data.keys().hasAll(['email', 'createdAt', 'updatedAt'])
+          && data.email is string && data.email.size() <= 200
+          // Basic profile fields
+          && (!('displayName'      in data) || data.displayName      == null || (data.displayName is string && data.displayName.size() <= 100))
+          && (!('activeProfileId'  in data) || data.activeProfileId  == null || (data.activeProfileId is string && data.activeProfileId.size() <= 50))
+          && (!('activeCategoryId' in data) || data.activeCategoryId == null || (data.activeCategoryId is string && data.activeCategoryId.size() <= 50))
+          // Schedule
+          && (!('workStartTime'    in data) || data.workStartTime    == null || (data.workStartTime is string && data.workStartTime.size() <= 5))
+          && (!('workEndTime'      in data) || data.workEndTime      == null || (data.workEndTime is string && data.workEndTime.size() <= 5))
+          && (!('dailyGoal'        in data) || data.dailyGoal        == null || data.dailyGoal is number)
+          && (!('workDays'         in data) || data.workDays         == null || (data.workDays is list && data.workDays.size() <= 7))
+          // Safety preferences
+          && (!('avoidDirtRoads'      in data) || data.avoidDirtRoads      == null || data.avoidDirtRoads      is bool)
+          && (!('avoidRidesWithStops' in data) || data.avoidRidesWithStops == null || data.avoidRidesWithStops is bool)
+          && (!('avoidTolls'          in data) || data.avoidTolls          == null || data.avoidTolls          is bool)
+          && (!('strictSafetyMode'    in data) || data.strictSafetyMode    == null || data.strictSafetyMode    is bool)
+          && (!('voiceAlerts'         in data) || data.voiceAlerts         == null || data.voiceAlerts         is bool)
+          && (!('autoReject'          in data) || data.autoReject          == null || data.autoReject          is bool)
+          // Vehicle config (for cost calculation)
+          && (!('vehicleSize' in data) || data.vehicleSize == null || (data.vehicleSize is string && data.vehicleSize.size() <= 20))
+          && (!('fuelType'    in data) || data.fuelType    == null || (data.fuelType is string    && data.fuelType.size()    <= 20))
+          // Onboarding wizard completion flag
+          && (!('wizardCompleted' in data) || data.wizardCompleted == null || data.wizardCompleted is bool)
+          && (!('driverMode'      in data) || data.driverMode      == null || (data.driverMode is string && data.driverMode.size() <= 20))
+          // City (for collective stats lookup)
+          && (!('city' in data) || data.city == null || (data.city is string && data.city.size() <= 100))
+          // Learned brain cache (summary of learnedThresholds — full list stored in subcollection)
+          && (!('globalAvgPricePerKm'   in data) || data.globalAvgPricePerKm   == null || data.globalAvgPricePerKm   is number)
+          && (!('globalAvgPricePerHour' in data) || data.globalAvgPricePerHour == null || data.globalAvgPricePerHour is number)
+          && (!('confidenceLevel'       in data) || data.confidenceLevel       == null || data.confidenceLevel       is number)
+          && (!('totalRidesAnalyzed'    in data) || data.totalRidesAnalyzed    == null || data.totalRidesAnalyzed    is number)
+          && (!('lastBrainSync'         in data) || data.lastBrainSync         == null || data.lastBrainSync         is timestamp);
+    }
+
+    match /users/{userId} {
+      allow get:  if isOwner(userId);
+      allow list: if isOwner(userId);
+
+      allow create: if isOwner(userId)
+                    && isValidId(userId)
+                    && isValidUserProfile(incoming())
+                    && incoming().email     == request.auth.token.email
+                    && incoming().createdAt == request.time
+                    && incoming().updatedAt == request.time;
+
+      allow update: if isOwner(userId)
+                    && isValidId(userId)
+                    && isValidUserProfile(incoming())
+                    && incoming().email     == existing().email
+                    && incoming().createdAt == existing().createdAt
+                    && incoming().updatedAt == request.time;
+
+      // ── Ride history (training data) ────────────────────────────────────
+      //
+      // Each accepted/rejected/ignored ride is stored here.
+      // learner.ts reads these to build the PersonalBrainState.
+      //
+      function isValidRideRecord(data) {
+        return data.keys().hasAll(['userId', 'status', 'totalPrice', 'pickupNeighborhood', 'createdAt'])
+            && data.userId          is string && data.userId == request.auth.uid
+            && data.status          is string && data.status.matches('^(accepted|rejected|ignored)$')
+            && data.totalPrice      is number
+            && data.pickupNeighborhood is string && data.pickupNeighborhood.size() <= 100
+            && (!('pricePerKm'         in data) || data.pricePerKm         == null || data.pricePerKm         is number)
+            && (!('pricePerHour'       in data) || data.pricePerHour       == null || data.pricePerHour       is number)
+            && (!('dayOfWeek'          in data) || data.dayOfWeek          == null || (data.dayOfWeek  is string && data.dayOfWeek.size()  <= 20))
+            && (!('timeOfDay'          in data) || data.timeOfDay          == null || (data.timeOfDay  is string && data.timeOfDay.size()  <= 20))
+            && (!('weather'            in data) || data.weather            == null || (data.weather    is string && data.weather.size()    <= 50))
+            && (!('dropoffNeighborhood' in data) || data.dropoffNeighborhood == null || (data.dropoffNeighborhood is string && data.dropoffNeighborhood.size() <= 100))
+            && (!('rideId'             in data) || data.rideId             == null || (data.rideId     is string && data.rideId.size()     <= 128))
+            && (!('score'              in data) || data.score              == null || data.score              is number)
+            && (!('platform'           in data) || data.platform           == null || (data.platform   is string && data.platform.size()   <= 20));
+      }
+
+      match /rides/{rideId} {
+        allow get:    if isOwner(userId);
+        allow list:   if isOwner(userId);
+        allow create: if isOwner(userId)
+                      && isValidId(userId)
+                      && isValidId(rideId)
+                      && isValidRideRecord(incoming())
+                      && incoming().createdAt == request.time;
+        allow update: if isOwner(userId)
+                      && isValidId(userId)
+                      && isValidId(rideId)
+                      && isValidRideRecord(incoming())
+                      && incoming().createdAt == existing().createdAt
+                      && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'createdAt']);
+        allow delete: if isOwner(userId);
+      }
+
+      // ── Learned thresholds cache (subcollection) ─────────────────────────
+      //
+      // Stores pre-computed LearnedThreshold entries per neighborhood.
+      // Updated by learner.ts after each brain sync.
+      // Avoids re-fetching the full ride history on every session.
+      //
+      function isValidLearnedThreshold(data) {
+        return data.keys().hasAll(['neighborhood', 'avgPricePerKm', 'avgPricePerHour', 'totalRides', 'lastUpdated'])
+            && data.neighborhood    is string && data.neighborhood.size() <= 100
+            && data.avgPricePerKm   is number
+            && data.avgPricePerHour is number
+            && data.totalRides      is number
+            && data.lastUpdated     is timestamp
+            && (!('acceptRate' in data) || data.acceptRate == null || data.acceptRate is number)
+            && (!('dayPeriod'  in data) || data.dayPeriod  == null || (data.dayPeriod is string && data.dayPeriod.size() <= 20));
+      }
+
+      match /learned_thresholds/{thresholdId} {
+        allow get:    if isOwner(userId);
+        allow list:   if isOwner(userId);
+        allow create: if isOwner(userId) && isValidLearnedThreshold(incoming());
+        allow update: if isOwner(userId) && isValidLearnedThreshold(incoming());
+        allow delete: if isOwner(userId);
+      }
+    }
+
+    // ─── City Collective Stats ────────────────────────────────────────────────
+    //
+    // Aggregate anonymized stats contributed by all drivers in a city.
+    // Read by new drivers as their starting baseline.
+    // Written by authenticated users (learner.ts pushCityStats) via merge.
+    //
+    // Security model:
+    //  - Any authenticated user can READ (new drivers need this data).
+    //  - Any authenticated user can UPDATE (contribute their anonymized stats).
+    //    The update rule enforces that only numeric/string fields are written,
+    //    and that a driver cannot inflate numbers arbitrarily.
+    //  - No single user can CREATE the document (only admin/CF should do it).
+    //    We allow create from authenticated users for simplicity in prototyping;
+    //    in production, restrict to a Cloud Function with admin SDK.
+    //
+    function isValidCityStats(data) {
+      return data.keys().hasAll(['city', 'avgPricePerKm', 'avgPricePerHour', 'totalRidesAggregated'])
+          && data.city                  is string && data.city.size() <= 100
+          && data.avgPricePerKm         is number && data.avgPricePerKm         > 0 && data.avgPricePerKm         < 50
+          && data.avgPricePerHour       is number && data.avgPricePerHour       > 0 && data.avgPricePerHour       < 1000
+          && data.totalRidesAggregated  is number && data.totalRidesAggregated  >= 0
+          && (!('p25PricePerKm'   in data) || data.p25PricePerKm   == null || (data.p25PricePerKm   is number && data.p25PricePerKm   > 0 && data.p25PricePerKm   < 50))
+          && (!('p25PricePerHour' in data) || data.p25PricePerHour == null || (data.p25PricePerHour is number && data.p25PricePerHour > 0 && data.p25PricePerHour < 1000))
+          && (!('topNeighborhoods' in data) || data.topNeighborhoods == null || data.topNeighborhoods is list)
+          && (!('lastUpdated' in data) || data.lastUpdated == null || data.lastUpdated is timestamp);
+    }
+
+    match /city_stats/{citySlug} {
+      allow get:    if isSignedIn();
+      allow list:   if isSignedIn();
+      allow create: if isSignedIn() && isValidCityStats(incoming());
+      allow update: if isSignedIn()
+                    && isValidCityStats(incoming())
+                    // Prevent a driver from dramatically inflating averages:
+                    // new total must be exactly existing + 1
+                    && incoming().totalRidesAggregated == existing().totalRidesAggregated + 1
+                    // Price averages must stay within ±20% of existing values
+                    // (incremental Welford update naturally satisfies this, but we guard against attacks)
+                    && incoming().avgPricePerKm   >= existing().avgPricePerKm   * 0.80
+                    && incoming().avgPricePerKm   <= existing().avgPricePerKm   * 1.20
+                    && incoming().avgPricePerHour >= existing().avgPricePerHour * 0.80
+                    && incoming().avgPricePerHour <= existing().avgPricePerHour * 1.20;
+      // No delete — collective memory is permanent
+    }
+
+  }
+}

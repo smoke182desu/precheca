@@ -1,0 +1,6 @@
+{
+  "name": "PRÉCHECA",
+  "description": "Seu copiloto de elite. O PRÉCHECA prevê o calor da cidade, filtra corridas lixo e te guia para o lucro máximo como um guia de jogo futurista.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": []
+}
