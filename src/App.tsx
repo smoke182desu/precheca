@@ -14,6 +14,7 @@ import { weatherIcon } from './lib/weatherService';
 import { generateMissions, Mission } from './lib/missionPlanner';
 
 import { SettingsWizard } from './components/SettingsWizard';
+import { EventsDashboard } from './components/EventsDashboard';
 
 function MapUpdater({ center, zoom }: { center: [number, number], zoom?: number }) {
   const map = useMap();
@@ -23,9 +24,6 @@ function MapUpdater({ center, zoom }: { center: [number, number], zoom?: number 
   return null;
 }
 
-// Add import for EvolutionDashboard and ChartLine icon at the top logic
-import { EventsDashboard } from './components/EventsDashboard';
-import { ChartLine } from 'lucide-react';
 function App() {
   const { user, loading, isSigningIn, signIn, logOut } = useFirebase();
 
