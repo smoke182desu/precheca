@@ -4,10 +4,11 @@ import 'leaflet/dist/leaflet.css';
 import { Settings, Map, LayoutDashboard, Zap, CheckCircle2, XCircle, MapPin, Navigation, CarFront, AlertTriangle, Play, Loader2, Route, Clock, Target, CalendarDays, ShieldCheck, Network, Cpu, ArrowRight, TrendingUp, TrendingDown, Minus, Database, Activity, Fingerprint, BrainCircuit, History, Compass, ArrowUp, Info, LogOut, Satellite, CloudRain, Hexagon, Component, Radio, Search, RotateCcw, Lock, Share2, Crown, Ticket } from 'lucide-react';
 import { PROFILES, CATEGORIES, getHotspotsForProfile, getTrailForProfile, simulateIncomingRide, analyzeRide } from './lib/analyzer';
 import { playAcceptSound, playRejectSound } from './lib/audio';
-import { DriverProfile, RideAnalysis, Hotspot, VehicleCategory } from './types';
+import { DriverProfile, RideAnalysis, Hotspot, VehicleCategory, PersonalBrainState } from './types';
 import { useFirebase } from './components/FirebaseProvider';
 import { db } from './lib/firebase';
 import { doc, getDoc, updateDoc, setDoc, serverTimestamp, collection } from 'firebase/firestore';
+import { buildPersonalBrain } from './lib/learner';
 
 import { SettingsWizard } from './components/SettingsWizard';
 
@@ -33,6 +34,7 @@ function App() {
   const [isNavigating, setIsNavigating] = useState(false);
   const [ridesTrained, setRidesTrained] = useState(0);
   const [showWizard, setShowWizard] = useState(false);
+  const [brainState, setBrainState] = useState<PersonalBrainState | null>(null);
   const [showProModal, setShowProModal] = useState(false);
   const [isPro, setIsPro] = useState(false); // Simulated Pro Plan Access
   const [customStops, setCustomStops] = useState<import('./types').TrailStep[]>([]);
@@ -152,30 +154,67 @@ function App() {
      };
   }, [gpsLocation?.lat, gpsLocation?.lng]);
 
-  // Auto-save user profile selection when changed
+  // Auto-save active profile/category selection whenever the user changes them
   useEffect(() => {
     if (!user) return;
-
-    // Load preferences on mount
-    getDoc(doc(db, `users/${user.uid}`)).then(userDoc => {
-      if (userDoc.exists()) {
-        const data = userDoc.data();
-        setUserPreferences({
-          avoidDirtRoads: data.avoidDirtRoads,
-          avoidRidesWithStops: data.avoidRidesWithStops,
-          avoidTolls: data.avoidTolls,
-          strictSafetyMode: data.strictSafetyMode,
-          voiceAlerts: data.voiceAlerts ?? true
-        });
-      }
-    });
-
     setDoc(doc(db, `users/${user.uid}`), {
-        activeProfileId: activeProfile.id,
-        activeCategoryId: activeCategory.id,
-        updatedAt: serverTimestamp()
+      activeProfileId: activeProfile.id,
+      activeCategoryId: activeCategory.id,
+      updatedAt: serverTimestamp()
     }, { merge: true }).catch(e => console.log('Silently failed update state', e));
   }, [activeProfile, activeCategory, user]);
+
+  // ── Brain initialization on login ─────────────────────────────────────────
+  // Runs once when the user logs in. Checks wizard completion, loads preferences,
+  // and kicks off the personal learning engine in the background.
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+
+    getDoc(doc(db, `users/${user.uid}`))
+      .then(snap => {
+        if (cancelled) return;
+        if (!snap.exists()) {
+          // Brand new user — show wizard immediately
+          setShowWizard(true);
+          return;
+        }
+        const data = snap.data();
+
+        // Show wizard if onboarding was never completed
+        if (!data.wizardCompleted) {
+          setShowWizard(true);
+        }
+
+        // Restore safety preferences
+        setUserPreferences({
+          avoidDirtRoads:      data.avoidDirtRoads,
+          avoidRidesWithStops: data.avoidRidesWithStops,
+          avoidTolls:          data.avoidTolls,
+          strictSafetyMode:    data.strictSafetyMode,
+          voiceAlerts:         data.voiceAlerts ?? true,
+        });
+
+        // Build personal brain in background (non-blocking)
+        const city = data.city || '';
+        if (city) {
+          buildPersonalBrain(user.uid, city)
+            .then(brain => { if (!cancelled) setBrainState(brain); })
+            .catch(e => console.error('[PRÉCHECA] Brain build failed:', e));
+        }
+      })
+      .catch(e => console.error('[PRÉCHECA] Failed to load user profile:', e));
+
+    return () => { cancelled = true; };
+  }, [user]);
+
+  // Rebuild brain after wizard saves (city may have changed)
+  const handleWizardSave = useCallback((city: string, _mode: string) => {
+    if (!user || !city) return;
+    buildPersonalBrain(user.uid, city)
+      .then(brain => setBrainState(brain))
+      .catch(e => console.error('[PRÉCHECA] Brain rebuild failed:', e));
+  }, [user]);
 
   // Compute effective GPS so map jumps to the manual neighborhood
   const effectiveGpsLocation = useMemo(() => {
@@ -360,7 +399,7 @@ function App() {
     setTimeout(() => {
       // Pass the current app context into the AI engine so it is connected
       const ride = simulateIncomingRide(liveContextContext);
-      const analysis = analyzeRide(ride, activeProfile, activeCategory.multiplier, userPreferences);
+      const analysis = analyzeRide(ride, activeProfile, activeCategory.multiplier, userPreferences, brainState ?? undefined, user?.uid ?? undefined);
       setCurrentAnalysis(analysis);
       setIsAnalyzing(false);
       
@@ -1410,7 +1449,12 @@ function App() {
         <TabButton id="profiles" icon={Settings} label="Objetivo" />
       </nav>
 
-      {showWizard && <SettingsWizard onClose={() => setShowWizard(false)} />}
+      {showWizard && (
+        <SettingsWizard
+          onClose={() => setShowWizard(false)}
+          onSave={handleWizardSave}
+        />
+      )}
     </div>
   );
 }
