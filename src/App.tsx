@@ -4,7 +4,7 @@ import 'leaflet/dist/leaflet.css';
 import { Settings, Map, LayoutDashboard, Zap, CheckCircle2, XCircle, MapPin, Navigation, CarFront, AlertTriangle, Play, Loader2, Route, Clock, Target, CalendarDays, ShieldCheck, Network, Cpu, ArrowRight, TrendingUp, TrendingDown, Minus, Database, Activity, Fingerprint, BrainCircuit, History, Compass, ArrowUp, Info, LogOut, Satellite, CloudRain, Hexagon, Component, Radio, Search, RotateCcw, Lock, Share2, Crown, Ticket } from 'lucide-react';
 import { PROFILES, CATEGORIES, getHotspotsForProfile, getTrailForProfile, simulateIncomingRide, analyzeRide } from './lib/analyzer';
 import { playAcceptSound, playRejectSound } from './lib/audio';
-import { DriverProfile, RideAnalysis, Hotspot, VehicleCategory, PersonalBrainState } from './types';
+import { DriverProfile, RideAnalysis, RideAnalysisV2, Hotspot, VehicleCategory, PersonalBrainState } from './types';
 import { useFirebase } from './components/FirebaseProvider';
 import { db } from './lib/firebase';
 import { doc, getDoc, updateDoc, setDoc, serverTimestamp, collection } from 'firebase/firestore';
@@ -15,6 +15,7 @@ import { generateMissions, Mission } from './lib/missionPlanner';
 
 import { SettingsWizard } from './components/SettingsWizard';
 import { EventsDashboard } from './components/EventsDashboard';
+import { RideInputModal } from './components/RideInputModal';
 
 function MapUpdater({ center, zoom }: { center: [number, number], zoom?: number }) {
   const map = useMap();
@@ -43,6 +44,7 @@ function App() {
   const [acceptedMissionId, setAcceptedMissionId] = useState<string | null>(null);
   const [showProModal, setShowProModal] = useState(false);
   const [isPro, setIsPro] = useState(false); // Simulated Pro Plan Access
+  const [showRideInput, setShowRideInput] = useState(false);
   const [customStops, setCustomStops] = useState<import('./types').TrailStep[]>([]);
   const [isAddingStop, setIsAddingStop] = useState(false);
   const [newStopData, setNewStopData] = useState<{
@@ -1894,6 +1896,21 @@ function App() {
         </div>
       )}
 
+      {/* ── BOTÃO FLUTUANTE "CORRIDA TOCOU?" ─────────────────────────────── */}
+      {/* Visível em todos os tabs, posicionado acima da nav bar */}
+      <button
+        onClick={() => setShowRideInput(true)}
+        className="absolute bottom-[88px] left-1/2 -translate-x-1/2 z-50
+                   bg-[#1e8e3e] text-white font-black text-sm uppercase tracking-wider
+                   px-6 py-3 rounded-full shadow-2xl shadow-green-900/40
+                   flex items-center gap-2.5 active:scale-95 transition-all
+                   border-2 border-white/20 animate-pulse"
+        style={{ animationDuration: '3s' }}
+      >
+        <Zap className="w-5 h-5" />
+        CORRIDA TOCOU? ANALISA
+      </button>
+
       {/* Bottom Navigation */}
       <nav className="bg-white border-t-2 border-[#dadce0] h-[80px] absolute bottom-0 w-full flex shadow-2xl z-40">
         <TabButton id="dashboard" icon={LayoutDashboard} label="Início" />
@@ -1902,6 +1919,24 @@ function App() {
         <TabButton id="events" icon={Ticket} label="Eventos" />
         <TabButton id="profiles" icon={Settings} label="Objetivo" />
       </nav>
+
+      {/* ── RIDE INPUT MODAL ─────────────────────────────────────────────── */}
+      <RideInputModal
+        isOpen={showRideInput}
+        onClose={() => setShowRideInput(false)}
+        onAnalysisDone={(analysis, ride) => {
+          setCurrentAnalysis(analysis);
+          setShowRideInput(false);
+          handleSpeech(analysis);
+        }}
+        activeProfile={activeProfile}
+        activeCategory={activeCategory}
+        userPreferences={userPreferences}
+        brainState={brainState ?? undefined}
+        uid={user?.uid}
+        currentNeighborhood={currentNeighborhood}
+        currentWeather={liveContext?.weatherData.weather ?? 'Limpo'}
+      />
 
       {showWizard && (
         <SettingsWizard
