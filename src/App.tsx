@@ -11,6 +11,7 @@ import { doc, getDoc, updateDoc, setDoc, serverTimestamp, collection } from 'fir
 import { buildPersonalBrain } from './lib/learner';
 import { buildLiveContext, LiveContext, invalidateContextCache } from './lib/contextService';
 import { weatherIcon } from './lib/weatherService';
+import { generateMissions, Mission } from './lib/missionPlanner';
 
 import { SettingsWizard } from './components/SettingsWizard';
 
@@ -38,6 +39,10 @@ function App() {
   const [showWizard, setShowWizard] = useState(false);
   const [brainState, setBrainState] = useState<PersonalBrainState | null>(null);
   const [liveContext, setLiveContext] = useState<LiveContext | null>(null);
+  // Mission planner — all generated missions (8), UI shows 3 at a time
+  const [allMissions, setAllMissions] = useState<Mission[]>([]);
+  const [visibleMissionIndices, setVisibleMissionIndices] = useState<[number, number, number]>([0, 1, 2]);
+  const [acceptedMissionId, setAcceptedMissionId] = useState<string | null>(null);
   const [showProModal, setShowProModal] = useState(false);
   const [isPro, setIsPro] = useState(false); // Simulated Pro Plan Access
   const [customStops, setCustomStops] = useState<import('./types').TrailStep[]>([]);
@@ -178,6 +183,66 @@ function App() {
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [effectiveGpsLocation?.lat, effectiveGpsLocation?.lng, realNeighborhood]);
+
+  // ── Mission generation ────────────────────────────────────────────────────
+  // Regenerates missions whenever the live context or brain updates.
+  useEffect(() => {
+    const missions = generateMissions(
+      {
+        windowMin: 120,
+        categoryMultiplier: activeCategory.multiplier,
+        liveContext,
+        brainState,
+      },
+      8  // generate 8, show 3 at a time
+    );
+    setAllMissions(missions);
+    setVisibleMissionIndices([0, 1, 2]);
+    setAcceptedMissionId(null);
+  }, [liveContext, brainState, activeCategory.multiplier]);
+
+  // Swap out a dismissed mission for the next available alternative
+  const handleDismissMission = useCallback((rank: number) => {
+    setVisibleMissionIndices(prev => {
+      const nextFreeIndex = Math.max(...prev) + 1;
+      if (nextFreeIndex >= allMissions.length) return prev;
+      const updated = [...prev] as [number, number, number];
+      const slotIndex = rank - 1; // rank 1→slot 0, rank 2→slot 1, rank 3→slot 2
+      updated[slotIndex] = nextFreeIndex;
+      return updated;
+    });
+  }, [allMissions.length]);
+
+  // Accept a mission — mark it and log to Firestore
+  const handleAcceptMission = useCallback(async (mission: Mission) => {
+    setAcceptedMissionId(mission.id);
+    if (!user) return;
+    try {
+      const { MissionLog } = await import('./types'); // type only, no runtime cost
+      const newDoc = collection(db, `users/${user.uid}/missions`);
+      const missionDoc = doc(newDoc);
+      await setDoc(missionDoc, {
+        strategy: mission.strategy,
+        emoji: mission.emoji,
+        neighborhoodType: mission.neighborhoodType,
+        targetDescription: mission.targetDescription,
+        specificNeighborhoods: mission.specificNeighborhoods,
+        estimatedEarningsR$: mission.estimatedEarningsR$,
+        estimatedKm: mission.estimatedKm,
+        estimatedRides: mission.estimatedRides,
+        estimatedWindowMin: mission.estimatedWindowMin,
+        confidencePercent: mission.confidencePercent,
+        demandMultiplier: mission.demandMultiplier,
+        reasonWhy: mission.reasonWhy,
+        badge: mission.badge ?? null,
+        outcome: 'not_reported',
+        acceptedAt: serverTimestamp(),
+        suggestedAt: mission.suggestedAt,
+      });
+    } catch (e) {
+      console.error('[Mission] Failed to log accepted mission:', e);
+    }
+  }, [user]);
 
   // Auto-save active profile/category selection whenever the user changes them
   useEffect(() => {
@@ -730,6 +795,180 @@ function App() {
                )}
 
                {/* ── FIM CONTEXTO AGORA ── */}
+
+               {/* ── MISSÕES — 3 estratégias com alternativas ── */}
+               {allMissions.length > 0 && (
+                 <div className="space-y-3">
+                   {/* Header */}
+                   <div className="flex items-center justify-between">
+                     <div className="flex items-center gap-2">
+                       <Target className="w-5 h-5 text-[#1a73e8]" />
+                       <span className="font-black text-slate-800 text-base">Missões Agora</span>
+                     </div>
+                     <div className="flex items-center gap-2">
+                       <span className="text-xs text-slate-400">
+                         janela de {Math.round(allMissions[0]?.estimatedWindowMin ?? 120)}min
+                       </span>
+                       <button
+                         onClick={() => {
+                           const m = generateMissions({ windowMin: 120, categoryMultiplier: activeCategory.multiplier, liveContext, brainState }, 8);
+                           setAllMissions(m);
+                           setVisibleMissionIndices([0, 1, 2]);
+                           setAcceptedMissionId(null);
+                         }}
+                         className="bg-slate-100 hover:bg-slate-200 p-1.5 rounded-full text-slate-500 transition-colors"
+                         title="Atualizar missões"
+                       >
+                         <RotateCcw className="w-3.5 h-3.5" />
+                       </button>
+                     </div>
+                   </div>
+
+                   {/* Mission cards */}
+                   {visibleMissionIndices.map((missionIndex, slotIndex) => {
+                     const mission = allMissions[missionIndex];
+                     if (!mission) return null;
+                     const rank = slotIndex + 1;
+                     const isAccepted = acceptedMissionId === mission.id;
+                     const rankColors = [
+                       'border-[#f9ab00] bg-[#f9ab00]/5',
+                       'border-slate-300 bg-white',
+                       'border-slate-200 bg-white',
+                     ];
+                     const rankBadgeColors = [
+                       'bg-[#f9ab00] text-white',
+                       'bg-slate-200 text-slate-600',
+                       'bg-slate-100 text-slate-500',
+                     ];
+                     const medals = ['🥇', '🥈', '🥉'];
+
+                     return (
+                       <div
+                         key={mission.id + slotIndex}
+                         className={`rounded-2xl border-2 overflow-hidden transition-all duration-300
+                           ${isAccepted ? 'border-[#1e8e3e] bg-green-50' : rankColors[slotIndex]}`}
+                       >
+                         {/* Mission header */}
+                         <div className="px-4 pt-3 pb-2 flex items-start justify-between gap-2">
+                           <div className="flex items-center gap-2 flex-1 min-w-0">
+                             <span className="text-2xl">{mission.emoji}</span>
+                             <div className="flex-1 min-w-0">
+                               <div className="flex items-center gap-1.5 flex-wrap">
+                                 <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${rankBadgeColors[slotIndex]}`}>
+                                   {medals[slotIndex]} #{rank}
+                                 </span>
+                                 {mission.badge && (
+                                   <span className="text-[10px] font-bold text-[#1a73e8] bg-blue-50 px-1.5 py-0.5 rounded-full">
+                                     {mission.badge}
+                                   </span>
+                                 )}
+                               </div>
+                               <h4 className="font-black text-slate-800 text-sm mt-0.5">{mission.strategy}</h4>
+                               <p className="text-xs text-slate-500 truncate">{mission.targetDescription}</p>
+                             </div>
+                           </div>
+                           {/* Confidence pill */}
+                           <div className="text-center shrink-0">
+                             <div className={`text-lg font-black leading-none
+                               ${mission.confidencePercent >= 75 ? 'text-[#1e8e3e]' :
+                                 mission.confidencePercent >= 55 ? 'text-[#f9ab00]' : 'text-slate-500'}`}>
+                               {mission.confidencePercent}%
+                             </div>
+                             <div className="text-[9px] text-slate-400 font-bold">confiança</div>
+                           </div>
+                         </div>
+
+                         {/* Specific neighborhoods from history */}
+                         {mission.specificNeighborhoods.length > 0 && (
+                           <div className="px-4 pb-1">
+                             <div className="flex flex-wrap gap-1">
+                               {mission.specificNeighborhoods.map(nb => (
+                                 <span key={nb} className="bg-[#1a73e8]/10 text-[#1a73e8] text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                   📍 {nb}
+                                 </span>
+                               ))}
+                             </div>
+                           </div>
+                         )}
+
+                         {/* Confidence bar */}
+                         <div className="px-4 py-1">
+                           <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                             <div
+                               className={`h-full rounded-full transition-all duration-700
+                                 ${mission.confidencePercent >= 75 ? 'bg-[#1e8e3e]' :
+                                   mission.confidencePercent >= 55 ? 'bg-[#f9ab00]' : 'bg-slate-400'}`}
+                               style={{ width: `${mission.confidencePercent}%` }}
+                             />
+                           </div>
+                         </div>
+
+                         {/* Estimates row */}
+                         <div className="px-4 py-2 grid grid-cols-3 gap-2 border-y border-slate-100">
+                           <div className="text-center">
+                             <div className="text-base font-black text-[#1e8e3e]">R${mission.estimatedEarningsR$}</div>
+                             <div className="text-[9px] text-slate-400 font-bold uppercase">Estimado</div>
+                           </div>
+                           <div className="text-center border-x border-slate-100">
+                             <div className="text-base font-black text-slate-700">{mission.estimatedKm}km</div>
+                             <div className="text-[9px] text-slate-400 font-bold uppercase">Total KM</div>
+                           </div>
+                           <div className="text-center">
+                             <div className="text-base font-black text-slate-700">~{Math.round(mission.estimatedRides)} corridas</div>
+                             <div className="text-[9px] text-slate-400 font-bold uppercase">R${mission.avgPricePerRide}/corrida</div>
+                           </div>
+                         </div>
+
+                         {/* Why / Reason */}
+                         {mission.reasonWhy && (
+                           <div className="px-4 pt-2 pb-1">
+                             <p className="text-xs text-slate-600 leading-snug">{mission.reasonWhy}</p>
+                           </div>
+                         )}
+
+                         {/* Risks (collapsible) */}
+                         {mission.risks.length > 0 && (
+                           <div className="px-4 pb-2">
+                             <div className="text-[10px] text-slate-400 font-bold flex gap-1 flex-wrap">
+                               <AlertTriangle className="w-3 h-3 text-amber-400 shrink-0 mt-0.5" />
+                               {mission.risks.slice(0, 2).join(' · ')}
+                             </div>
+                           </div>
+                         )}
+
+                         {/* Action buttons */}
+                         <div className="px-4 pb-3 flex gap-2">
+                           {isAccepted ? (
+                             <div className="flex-1 bg-green-100 text-[#1e8e3e] font-black py-2.5 rounded-xl flex items-center justify-center gap-1.5 text-sm">
+                               <CheckCircle2 className="w-4 h-4" />
+                               Missão Aceita!
+                             </div>
+                           ) : (
+                             <>
+                               <button
+                                 onClick={() => handleAcceptMission(mission)}
+                                 className="flex-1 bg-[#1a73e8] hover:bg-[#1557b0] text-white font-black py-2.5 rounded-xl flex items-center justify-center gap-1.5 text-sm transition-colors active:scale-95"
+                               >
+                                 <Zap className="w-4 h-4" /> Aceitar
+                               </button>
+                               {missionIndex < allMissions.length - 1 && (
+                                 <button
+                                   onClick={() => handleDismissMission(rank)}
+                                   className="bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-2.5 px-3 rounded-xl flex items-center gap-1 text-xs transition-colors"
+                                 >
+                                   <RotateCcw className="w-3.5 h-3.5" />
+                                   Outra
+                                 </button>
+                               )}
+                             </>
+                           )}
+                         </div>
+                       </div>
+                     );
+                   })}
+                 </div>
+               )}
+               {/* ── FIM MISSÕES ── */}
 
                {/* ASSISTENT GAMIFIED COPILOT */}
                <div className="bg-gradient-to-br from-[#1a73e8] via-[#1a73e8] to-[#1557b0] rounded-2xl p-5 shadow-xl relative overflow-hidden flex flex-col gap-3 text-white border-b-4 border-black/20">
