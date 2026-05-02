@@ -160,6 +160,31 @@ function App() {
      };
   }, [gpsLocation?.lat, gpsLocation?.lng]);
 
+  // Compute effective GPS so map jumps to the manual neighborhood
+  // (must be declared BEFORE any useEffect that references it in its dependency array)
+  const effectiveGpsLocation = useMemo(() => {
+    if (manualNeighborhood) {
+      const coords: Record<string, {lat: number, lng: number}> = {
+        'Plano Piloto': { lat: -15.793889, lng: -47.882778 },
+        'Águas Claras': { lat: -15.836, lng: -48.028 },
+        'Taguatinga': { lat: -15.833, lng: -48.056 },
+        'Morumbi': { lat: -23.621, lng: -46.699 },
+        'Santana': { lat: -23.502, lng: -46.625 },
+        'Itaim Bibi': { lat: -23.585, lng: -46.677 },
+        'Pinheiros': { lat: -23.561, lng: -46.695 },
+        'Vila Mariana': { lat: -23.589, lng: -46.634 },
+        'Interlagos': { lat: -23.700, lng: -46.685 },
+        'Lapa': { lat: -23.520, lng: -46.705 },
+        'Vila Prudente': { lat: -23.580, lng: -46.575 },
+        'Centro': { lat: -23.550, lng: -46.633 }
+      };
+      if (coords[manualNeighborhood]) {
+        return { ...coords[manualNeighborhood], speed: 12, heading: 45 };
+      }
+    }
+    return gpsLocation;
+  }, [gpsLocation, manualNeighborhood]);
+
   // ── Live Context: real weather + holiday + nearby POIs ────────────────────
   // Runs when GPS position changes significantly. Updates every ~8 minutes.
   useEffect(() => {
@@ -306,30 +331,6 @@ function App() {
       .then(brain => setBrainState(brain))
       .catch(e => console.error('[PRÉCHECA] Brain rebuild failed:', e));
   }, [user]);
-
-  // Compute effective GPS so map jumps to the manual neighborhood
-  const effectiveGpsLocation = useMemo(() => {
-    if (manualNeighborhood) {
-      const coords: Record<string, {lat: number, lng: number}> = {
-        'Plano Piloto': { lat: -15.793889, lng: -47.882778 },
-        'Águas Claras': { lat: -15.836, lng: -48.028 },
-        'Taguatinga': { lat: -15.833, lng: -48.056 },
-        'Morumbi': { lat: -23.621, lng: -46.699 },
-        'Santana': { lat: -23.502, lng: -46.625 },
-        'Itaim Bibi': { lat: -23.585, lng: -46.677 },
-        'Pinheiros': { lat: -23.561, lng: -46.695 },
-        'Vila Mariana': { lat: -23.589, lng: -46.634 },
-        'Interlagos': { lat: -23.700, lng: -46.685 },
-        'Lapa': { lat: -23.520, lng: -46.705 },
-        'Vila Prudente': { lat: -23.580, lng: -46.575 },
-        'Centro': { lat: -23.550, lng: -46.633 }
-      };
-      if (coords[manualNeighborhood]) {
-        return { ...coords[manualNeighborhood], speed: 12, heading: 45 };
-      }
-    }
-    return gpsLocation;
-  }, [gpsLocation, manualNeighborhood]);
 
   const currentNeighborhood = useMemo(() => {
     if (manualNeighborhood) return manualNeighborhood;
