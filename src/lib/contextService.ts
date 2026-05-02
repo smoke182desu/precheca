@@ -20,10 +20,14 @@ import {
   classifyDayCategory,
   getDemandSignal,
   classifyNeighborhoodType,
-  getContextualDemandScore,
-  HolidayEntry,
   NeighborhoodType,
 } from './cityKnowledge';
+import {
+  getNearbyEvents,
+  getTopEventBoost,
+  EventSignal,
+  EventsOptions,
+} from './eventsService';
 
 // ─── POI Detection via Overpass API ──────────────────────────────────────────
 
@@ -166,6 +170,11 @@ export interface LiveContext {
   pois: NearbyPOIs;
   inferredNeighborhoodType: NeighborhoodType | null;
 
+  // Events
+  events: EventSignal[];
+  eventBoost: number;           // top event demandBoost (0 = sem eventos)
+  eventsLabel: string | null;   // ex: "🎵 Show + ⚽ Jogo hoje" ou null
+
   // Meta
   refreshedAt: Date;
 }
@@ -178,17 +187,19 @@ const LIVE_CTX_TTL_MS = 8 * 60 * 1000; // 8 minutos
 
 /**
  * Builds a complete real-time context for the driver's current location.
- * Aggregates weather, calendar, and nearby POIs into one object that feeds
- * both the algorithm and the UI.
+ * Aggregates weather, calendar, nearby POIs and events into one object that
+ * feeds both the algorithm and the UI.
  *
  * @param lat               Current GPS latitude
  * @param lng               Current GPS longitude
  * @param neighborhoodName  Name from reverse geocoding (for name-based classification)
+ * @param eventsOptions     Optional API keys for Ticketmaster + football-data.org
  */
 export async function buildLiveContext(
   lat: number,
   lng: number,
-  neighborhoodName: string
+  neighborhoodName: string,
+  eventsOptions?: EventsOptions
 ): Promise<LiveContext> {
   const now = new Date();
 
@@ -211,6 +222,14 @@ export async function buildLiveContext(
     getNearbyPOIs(lat, lng),
   ]);
 
+  // Events — Ticketmaster + football-data.org + heurística
+  const events = await getNearbyEvents(lat, lng, {
+    ...eventsOptions,
+    driverCity: neighborhoodName,
+    pois: { stadiums: pois.stadiums, bars: pois.bars, airports: pois.airports },
+  }).catch(() => [] as EventSignal[]);
+  const eventBoost = getTopEventBoost(events);
+
   // Calendar context (pure computation, no API)
   const holidayCtx = getHolidayContext(now);
   const dayCategory = classifyDayCategory(now);
@@ -226,6 +245,9 @@ export async function buildLiveContext(
     dayCategory,
     weatherData.weather
   );
+
+  // Combine base demand with event boost (additive, capped at 3.5x)
+  const combinedMultiplier = Math.min(demandSignal.multiplier + eventBoost * 0.6, 3.5);
 
   // Collect insights
   const contextInsights: string[] = [];
@@ -274,8 +296,36 @@ export async function buildLiveContext(
     }
   }
 
+  // Event insights
+  for (const ev of events.slice(0, 3)) {
+    const timeStr = ev.startsAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    const crowd   = ev.estimatedAttendance >= 1000
+      ? `~${(ev.estimatedAttendance / 1000).toFixed(0)}k pessoas`
+      : `~${ev.estimatedAttendance} pessoas`;
+    const src     = ev.source === 'ticketmaster' ? 'Ticketmaster' :
+                    ev.source === 'football'     ? 'Futebol' : 'Inferido';
+    const conf    = ev.source === 'heuristic' ? ` · ${ev.confidencePercent}% conf.` : '';
+
+    contextInsights.push(
+      `${ev.source === 'inferred_game' || ev.type === 'sports' ? '⚽' :
+         ev.type === 'concert' ? '🎵' :
+         ev.type === 'theatre' ? '🎭' : '🎪'} ` +
+      `${ev.name} — ${ev.venue} · ${timeStr} · ${crowd}${conf} · +${(ev.demandBoost * 100).toFixed(0)}% demanda [${src}]`
+    );
+  }
+
+  // Events label (for dashboard badge)
+  let eventsLabel: string | null = null;
+  if (events.length > 0) {
+    const topEvent = events[0];
+    const extraCount = events.length - 1;
+    const emoji = topEvent.type === 'sports' || topEvent.type === 'inferred_game' ? '⚽' :
+                  topEvent.type === 'concert' ? '🎵' : '🎪';
+    eventsLabel = `${emoji} ${topEvent.name}${extraCount > 0 ? ` +${extraCount}` : ''}`;
+  }
+
   // Demand level classification
-  const m = demandSignal.multiplier;
+  const m = combinedMultiplier;
   const demandLevel: LiveContext['demandLevel'] =
     m >= 2.0 ? 'muito_alta' :
     m >= 1.3 ? 'alta' :
@@ -294,12 +344,15 @@ export async function buildLiveContext(
     isHoliday:    !!holidayCtx && !holidayCtx.isEve,
     isEve:        !!holidayCtx?.isEve,
     dayCategory:  dayCategory as string,
-    demandMultiplier: demandSignal.multiplier,
+    demandMultiplier: combinedMultiplier,
     demandLevel,
     demandLabel,
     contextInsights,
     pois,
     inferredNeighborhoodType: effectiveNbType,
+    events,
+    eventBoost,
+    eventsLabel,
     refreshedAt: now,
   };
 

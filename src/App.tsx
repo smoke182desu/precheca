@@ -172,7 +172,10 @@ function App() {
       const { lat, lng } = effectiveGpsLocation;
       const neighborhood = manualNeighborhood || realNeighborhood;
 
-      buildLiveContext(lat, lng, neighborhood)
+      buildLiveContext(lat, lng, neighborhood, {
+        ticketmasterKey: import.meta.env.VITE_TICKETMASTER_KEY as string | undefined,
+        footballKey:     import.meta.env.VITE_FOOTBALL_KEY     as string | undefined,
+      })
         .then(ctx => { if (!cancelled) setLiveContext(ctx); })
         .catch(e => console.warn('[LiveContext] Failed:', e));
     }, 3000); // debounce 3s after GPS settles
@@ -789,12 +792,103 @@ function App() {
                    {/* Footer: last updated */}
                    <div className="border-t border-[#f1f3f4] px-4 py-1.5 text-[9px] font-mono text-slate-400 flex justify-between">
                      <span>Atualizado {liveContext.refreshedAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
-                     <span>Open-Meteo · OpenStreetMap</span>
+                     <span>Open-Meteo · OSM{liveContext.events.length > 0 ? ' · Ticketmaster' : ''}</span>
                    </div>
                  </div>
                )}
 
                {/* ── FIM CONTEXTO AGORA ── */}
+
+               {/* ── EVENTOS PRÓXIMOS ─────────────────────────────────── */}
+               {liveContext && liveContext.events.length > 0 && (
+                 <div className="rounded-2xl border border-purple-200 bg-white overflow-hidden shadow-sm">
+                   {/* Header */}
+                   <div className="px-4 py-3 bg-gradient-to-r from-purple-600 to-purple-500 flex items-center justify-between">
+                     <div className="flex items-center gap-2 text-white">
+                       <Ticket className="w-4 h-4" />
+                       <span className="font-black text-xs uppercase tracking-widest">Eventos Próximos</span>
+                     </div>
+                     <span className="text-[10px] font-bold text-purple-200">
+                       {liveContext.events.length} evento{liveContext.events.length > 1 ? 's' : ''} detectado{liveContext.events.length > 1 ? 's' : ''}
+                     </span>
+                   </div>
+
+                   {/* Event list */}
+                   <div className="divide-y divide-purple-50">
+                     {liveContext.events.slice(0, 4).map(ev => {
+                       const timeStr  = ev.startsAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                       const crowd    = ev.estimatedAttendance >= 1000
+                         ? `~${(ev.estimatedAttendance / 1000).toFixed(0)}k`
+                         : `~${ev.estimatedAttendance}`;
+                       const boost    = ev.demandBoost > 0
+                         ? `+${(ev.demandBoost * 100).toFixed(0)}% demanda`
+                         : '';
+                       const srcBadge = ev.source === 'ticketmaster' ? '🎟️ TM' :
+                                        ev.source === 'football'     ? '⚽ FD' : '🔍 inf.';
+                       const srcColor = ev.source === 'ticketmaster' ? 'bg-blue-100 text-blue-700' :
+                                        ev.source === 'football'     ? 'bg-green-100 text-green-700' :
+                                                                        'bg-slate-100 text-slate-500';
+                       const evEmoji  = ev.type === 'sports' || ev.type === 'inferred_game' ? '🏟️' :
+                                        ev.type === 'concert' ? '🎵' :
+                                        ev.type === 'theatre' ? '🎭' :
+                                        ev.type === 'festival' ? '🎪' : '🎉';
+
+                       return (
+                         <div key={ev.id} className="px-4 py-3">
+                           <div className="flex items-start justify-between gap-2">
+                             <div className="flex items-start gap-2 min-w-0">
+                               <span className="text-lg shrink-0 mt-0.5">{evEmoji}</span>
+                               <div className="min-w-0">
+                                 <p className="font-bold text-slate-800 text-sm truncate">{ev.name}</p>
+                                 <p className="text-xs text-slate-500 truncate">{ev.venue} · {timeStr}</p>
+                               </div>
+                             </div>
+                             <div className="flex flex-col items-end gap-1 shrink-0">
+                               {boost && (
+                                 <span className="text-[10px] font-black text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full whitespace-nowrap">
+                                   {boost}
+                                 </span>
+                               )}
+                               <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${srcColor}`}>
+                                 {srcBadge}
+                               </span>
+                             </div>
+                           </div>
+                           <div className="flex items-center gap-3 mt-1.5 ml-7">
+                             <span className="text-[10px] text-slate-400">👥 {crowd} pessoas</span>
+                             {ev.source === 'heuristic' && (
+                               <span className="text-[10px] text-slate-400">{ev.confidencePercent}% confiança</span>
+                             )}
+                             {ev.url && (
+                               <a
+                                 href={ev.url}
+                                 target="_blank"
+                                 rel="noopener noreferrer"
+                                 className="text-[10px] text-purple-600 font-bold hover:underline"
+                               >
+                                 Ver ingresso ↗
+                               </a>
+                             )}
+                           </div>
+                         </div>
+                       );
+                     })}
+                   </div>
+
+                   {/* Event boost summary */}
+                   {liveContext.eventBoost > 0 && (
+                     <div className="border-t border-purple-100 px-4 py-2 bg-purple-50 flex items-center justify-between">
+                       <span className="text-xs text-purple-700 font-bold">
+                         Impacto total na demanda
+                       </span>
+                       <span className="text-xs font-black text-purple-800">
+                         +{Math.round(liveContext.eventBoost * 60)}% acima do normal
+                       </span>
+                     </div>
+                   )}
+                 </div>
+               )}
+               {/* ── FIM EVENTOS PRÓXIMOS ── */}
 
                {/* ── MISSÕES — 3 estratégias com alternativas ── */}
                {allMissions.length > 0 && (
