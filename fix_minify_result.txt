@@ -1,0 +1,5 @@
+[main 7e74adf] fix: desabilitar minifyIdentifiers no esbuild ÔÇö resolve TDZ com React internals
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+To https://github.com/smoke182desu/precheca.git
+   87cf147..7e74adf  main -> main
+DONE 

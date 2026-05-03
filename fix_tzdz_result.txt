@@ -1,0 +1,5 @@
+[main df34704] fix: mover STEP_TITLES para modulo ÔÇö corrige TDZ Re no bundle minificado
+ 1 file changed, 13 insertions(+), 11 deletions(-)
+To https://github.com/smoke182desu/precheca.git
+   8b084e8..df34704  main -> main
+DONE 

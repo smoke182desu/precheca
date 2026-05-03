@@ -1,0 +1,5 @@
+[main 8b084e8] fix: mover imports para o topo do App.tsx ÔÇö corrige crash de inicializacao
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+To https://github.com/smoke182desu/precheca.git
+   2fc1c53..8b084e8  main -> main
+DONE 

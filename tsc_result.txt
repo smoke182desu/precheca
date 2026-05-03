@@ -1,0 +1,44 @@
+O sistema n∆o pode encontrar o caminho especificado.
+--- 
+ O volume na unidade C n∆o tem nome.
+ O N£mero de SÇrie do Volume Ç 1489-7D64
+
+ Pasta de C:\Users\clark\Desktop\projetos\precheca
+
+02/05/2026  18:24    <DIR>          .
+02/05/2026  17:46    <DIR>          ..
+02/05/2026  20:22               445 .env.example
+02/05/2026  20:22                73 .gitignore
+02/05/2026  17:42    <DIR>          android
+02/05/2026  20:22             2.652 apply-google-palette.cjs
+02/05/2026  20:22               186 capacitor.config.ts
+02/05/2026  20:22            41.768 classes.txt
+02/05/2026  18:02               332 commit2_result.txt
+02/05/2026  18:10               280 commit3_result.txt
+02/05/2026  17:55               758 commit_result.txt
+02/05/2026  17:55               457 do_commit.bat
+02/05/2026  18:02               430 do_commit2.bat
+02/05/2026  18:10               424 do_commit3.bat
+02/05/2026  18:23               169 do_tsc_check.bat
+02/05/2026  20:22               426 firebase-applet-config.json
+02/05/2026  20:22             1.838 firebase-blueprint.json
+02/05/2026  17:39            13.211 firestore.rules
+02/05/2026  20:22               543 fix-hovers.cjs
+02/05/2026  20:22               634 fix-legibility.cjs
+02/05/2026  20:22                 0 fix_tabs.cjs
+02/05/2026  17:44            16.248 git_status.txt
+02/05/2026  20:22               311 index.html
+02/05/2026  20:22               264 metadata.json
+02/05/2026  20:22           272.917 package-lock.json
+02/05/2026  20:22             1.156 package.json
+02/05/2026  17:46               139 push_log.txt
+02/05/2026  20:22               550 README.md
+02/05/2026  20:22             1.451 rewrite-hud.cjs
+02/05/2026  20:22             1.507 rewrite.cjs
+02/05/2026  18:24               223 run_tsc.bat
+02/05/2026  18:09    <DIR>          src
+02/05/2026  20:22               508 tsconfig.json
+02/05/2026  18:24                60 tsc_result.txt
+02/05/2026  20:22               705 vite.config.ts
+              31 arquivo(s)        360.665 bytes
+               4 pasta(s)   60.023.758.848 bytes dispon°veis

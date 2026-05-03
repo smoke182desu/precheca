@@ -1,0 +1,5 @@
+[main f6d5dd8] feat: SettingsWizard conversacional ÔÇö cards de horario, preferencias e perfil de seguranca
+ 1 file changed, 586 insertions(+), 193 deletions(-)
+To https://github.com/smoke182desu/precheca.git
+   886756c..f6d5dd8  main -> main
+DONE 

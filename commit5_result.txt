@@ -1,0 +1,6 @@
+[main 2fc1c53] feat: eventos culturais e esportivos ÔÇö Ticketmaster + football-data.org + heuristica
+ 4 files changed, 605 insertions(+), 9 deletions(-)
+ create mode 100644 src/lib/eventsService.ts
+To https://github.com/smoke182desu/precheca.git
+   f6d5dd8..2fc1c53  main -> main
+DONE 

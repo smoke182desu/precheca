@@ -1,0 +1,6 @@
+[main 886756c] feat: Mission Planner ÔÇö 3 missoes com alternativas, estimativas reais e log no Firestore
+ 3 files changed, 724 insertions(+)
+ create mode 100644 src/lib/missionPlanner.ts
+To https://github.com/smoke182desu/precheca.git
+   e57a90d..886756c  main -> main
+DONE 

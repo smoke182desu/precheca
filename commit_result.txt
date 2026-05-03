@@ -1,0 +1,24 @@
+On branch main
+Your branch is up to date with 'origin/main'.
+
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+	modified:   src/App.tsx
+	modified:   src/components/SettingsWizard.tsx
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   git_status.txt
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	commit_result.txt
+	do_commit.bat
+	push_log.txt
+
+[main ec08916] feat: wizard de onboarding + algoritmo de aprendizado conectado
+ 2 files changed, 622 insertions(+), 274 deletions(-)
+To https://github.com/smoke182desu/precheca.git
+   e51ce8a..ec08916  main -> main
+DONE 

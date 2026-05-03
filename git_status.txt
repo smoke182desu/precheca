@@ -96,3 +96,147 @@ Untracked files:
   (use "git add <file>..." to include in what will be committed)
 	git_status.txt
 
+warning: in the working copy of '.env.example', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '.gitignore', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'README.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'android/.gitignore', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'android/app/.gitignore', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'android/app/build.gradle', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'android/app/capacitor.build.gradle', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'android/app/proguard-rules.pro', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'android/app/src/androidTest/java/com/getcapacitor/myapp/ExampleInstrumentedTest.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'android/app/src/main/AndroidManifest.xml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'android/app/src/main/java/com/rotautil/app/MainActivity.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'android/app/src/main/res/drawable-v24/ic_launcher_foreground.xml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'android/app/src/main/res/drawable/ic_launcher_background.xml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'android/app/src/main/res/layout/activity_main.xml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'android/app/src/main/res/values/ic_launcher_background.xml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'android/app/src/main/res/values/strings.xml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'android/app/src/main/res/values/styles.xml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'android/app/src/main/res/xml/file_paths.xml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'android/app/src/test/java/com/getcapacitor/myapp/ExampleUnitTest.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'android/build.gradle', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'android/capacitor.settings.gradle', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'android/gradle.properties', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'android/gradle/wrapper/gradle-wrapper.properties', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'android/gradlew', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'android/settings.gradle', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'android/variables.gradle', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apply-google-palette.cjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'capacitor.config.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'classes.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'firebase-applet-config.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'firebase-blueprint.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'fix-hovers.cjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'fix-legibility.cjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'index.html', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'metadata.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'package-lock.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'package.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'rewrite-hud.cjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'rewrite.cjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/App.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/EventsDashboard.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/EvolutionDashboard.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/FirebaseProvider.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/SettingsWizard.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/index.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/lib/audio.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/lib/firebase.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'tsconfig.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'vite.config.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'git_status.txt', LF will be replaced by CRLF the next time Git touches it
+[master (root-commit) e51ce8a] initial commit precheca
+ 88 files changed, 14258 insertions(+)
+ create mode 100644 .env.example
+ create mode 100644 .gitignore
+ create mode 100644 README.md
+ create mode 100644 android/.gitignore
+ create mode 100644 android/app/.gitignore
+ create mode 100644 android/app/build.gradle
+ create mode 100644 android/app/capacitor.build.gradle
+ create mode 100644 android/app/proguard-rules.pro
+ create mode 100644 android/app/src/androidTest/java/com/getcapacitor/myapp/ExampleInstrumentedTest.java
+ create mode 100644 android/app/src/main/AndroidManifest.xml
+ create mode 100644 android/app/src/main/java/com/rotautil/app/MainActivity.java
+ create mode 100644 android/app/src/main/res/drawable-land-hdpi/splash.png
+ create mode 100644 android/app/src/main/res/drawable-land-mdpi/splash.png
+ create mode 100644 android/app/src/main/res/drawable-land-xhdpi/splash.png
+ create mode 100644 android/app/src/main/res/drawable-land-xxhdpi/splash.png
+ create mode 100644 android/app/src/main/res/drawable-land-xxxhdpi/splash.png
+ create mode 100644 android/app/src/main/res/drawable-port-hdpi/splash.png
+ create mode 100644 android/app/src/main/res/drawable-port-mdpi/splash.png
+ create mode 100644 android/app/src/main/res/drawable-port-xhdpi/splash.png
+ create mode 100644 android/app/src/main/res/drawable-port-xxhdpi/splash.png
+ create mode 100644 android/app/src/main/res/drawable-port-xxxhdpi/splash.png
+ create mode 100644 android/app/src/main/res/drawable-v24/ic_launcher_foreground.xml
+ create mode 100644 android/app/src/main/res/drawable/ic_launcher_background.xml
+ create mode 100644 android/app/src/main/res/drawable/splash.png
+ create mode 100644 android/app/src/main/res/layout/activity_main.xml
+ create mode 100644 android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+ create mode 100644 android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+ create mode 100644 android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+ create mode 100644 android/app/src/main/res/mipmap-hdpi/ic_launcher_foreground.png
+ create mode 100644 android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png
+ create mode 100644 android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+ create mode 100644 android/app/src/main/res/mipmap-mdpi/ic_launcher_foreground.png
+ create mode 100644 android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png
+ create mode 100644 android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+ create mode 100644 android/app/src/main/res/mipmap-xhdpi/ic_launcher_foreground.png
+ create mode 100644 android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png
+ create mode 100644 android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+ create mode 100644 android/app/src/main/res/mipmap-xxhdpi/ic_launcher_foreground.png
+ create mode 100644 android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png
+ create mode 100644 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+ create mode 100644 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png
+ create mode 100644 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
+ create mode 100644 android/app/src/main/res/values/ic_launcher_background.xml
+ create mode 100644 android/app/src/main/res/values/strings.xml
+ create mode 100644 android/app/src/main/res/values/styles.xml
+ create mode 100644 android/app/src/main/res/xml/file_paths.xml
+ create mode 100644 android/app/src/test/java/com/getcapacitor/myapp/ExampleUnitTest.java
+ create mode 100644 android/build.gradle
+ create mode 100644 android/capacitor.settings.gradle
+ create mode 100644 android/gradle.properties
+ create mode 100644 android/gradle/wrapper/gradle-wrapper.jar
+ create mode 100644 android/gradle/wrapper/gradle-wrapper.properties
+ create mode 100644 android/gradlew
+ create mode 100644 android/gradlew.bat
+ create mode 100644 android/settings.gradle
+ create mode 100644 android/variables.gradle
+ create mode 100644 apply-google-palette.cjs
+ create mode 100644 capacitor.config.ts
+ create mode 100644 classes.txt
+ create mode 100644 firebase-applet-config.json
+ create mode 100644 firebase-blueprint.json
+ create mode 100644 firestore.rules
+ create mode 100644 fix-hovers.cjs
+ create mode 100644 fix-legibility.cjs
+ create mode 100644 fix_tabs.cjs
+ create mode 100644 git_status.txt
+ create mode 100644 index.html
+ create mode 100644 metadata.json
+ create mode 100644 package-lock.json
+ create mode 100644 package.json
+ create mode 100644 rewrite-hud.cjs
+ create mode 100644 rewrite.cjs
+ create mode 100644 src/App.tsx
+ create mode 100644 src/components/EventsDashboard.tsx
+ create mode 100644 src/components/EvolutionDashboard.tsx
+ create mode 100644 src/components/FirebaseProvider.tsx
+ create mode 100644 src/components/SettingsWizard.tsx
+ create mode 100644 src/index.css
+ create mode 100644 src/lib/analyzer.ts
+ create mode 100644 src/lib/audio.ts
+ create mode 100644 src/lib/cityKnowledge.ts
+ create mode 100644 src/lib/firebase.ts
+ create mode 100644 src/lib/learner.ts
+ create mode 100644 src/lib/safetyRules.ts
+ create mode 100644 src/main.tsx
+ create mode 100644 src/types.ts
+ create mode 100644 tsconfig.json
+ create mode 100644 vite.config.ts
+DONE 

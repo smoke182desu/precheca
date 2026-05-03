@@ -1,0 +1,7 @@
+[main e57a90d] feat: clima real (Open-Meteo) + feriados + POIs OpenStreetMap + card Contexto Agora
+ 3 files changed, 622 insertions(+), 7 deletions(-)
+ create mode 100644 src/lib/contextService.ts
+ create mode 100644 src/lib/weatherService.ts
+To https://github.com/smoke182desu/precheca.git
+   ec08916..e57a90d  main -> main
+DONE 

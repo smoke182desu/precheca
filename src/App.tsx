@@ -16,6 +16,7 @@ import { generateMissions, Mission } from './lib/missionPlanner';
 import { SettingsWizard } from './components/SettingsWizard';
 import { EventsDashboard } from './components/EventsDashboard';
 import { RideInputModal } from './components/RideInputModal';
+import { useRideListener } from './lib/rideListener';
 
 function MapUpdater({ center, zoom }: { center: [number, number], zoom?: number }) {
   const map = useMap();
@@ -71,6 +72,23 @@ function App() {
   const [manualNeighborhood, setManualNeighborhood] = useState<string | null>(null);
   const [realNeighborhood, setRealNeighborhood] = useState<string>('Buscando bairro...');
   const [userPreferences, setUserPreferences] = useState<{ avoidDirtRoads?: boolean; avoidRidesWithStops?: boolean; avoidTolls?: boolean; strictSafetyMode?: boolean; voiceAlerts?: boolean; }>({});
+
+  // ── Listener automático de corridas (APK Android) ─────────────────────────
+  // No PWA/browser: isAvailable=false, hook é no-op.
+  // No APK instalado: lê notificações do Uber/99 em background e toca som.
+  const { state: rideListenerState, requestPermission: requestNotifPermission } = useRideListener({
+    activeProfile,
+    activeCategory,
+    userPreferences,
+    brainState: brainState ?? undefined,
+    uid: user?.uid,
+    currentNeighborhood: realNeighborhood,
+    currentWeather: liveContext?.weatherData.weather ?? 'Limpo',
+    onRideDetected: (analysis, ride) => {
+      setCurrentAnalysis(analysis);
+      handleSpeech(analysis);
+    },
+  });
 
   // Real-time Geolocation Hook
   useEffect(() => {
@@ -554,7 +572,31 @@ function App() {
 
   return (
     <div className="bg-[#f8f9fa] text-[#202124] min-h-screen font-sans tracking-normal flex flex-col mx-auto max-w-md shadow-2xl overflow-hidden relative">
-      
+
+      {/* ── BANNER: listener ativo (APK) ─────────────────────────────────── */}
+      {rideListenerState.isAvailable && !rideListenerState.hasPermission && (
+        <div
+          className="bg-amber-500 text-white px-4 py-2.5 flex items-center justify-between gap-3 cursor-pointer"
+          onClick={requestNotifPermission}
+        >
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 shrink-0" />
+            <span className="text-xs font-black uppercase tracking-wide">
+              Ativar leitura automática do Uber/99
+            </span>
+          </div>
+          <span className="text-xs font-black bg-white/20 px-2 py-1 rounded-full">ATIVAR</span>
+        </div>
+      )}
+      {rideListenerState.isAvailable && rideListenerState.isListening && (
+        <div className="bg-[#1e8e3e] text-white px-4 py-1.5 flex items-center gap-2">
+          <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
+          <span className="text-[10px] font-black uppercase tracking-widest">
+            Escutando Uber/99 — som automático ativo
+          </span>
+        </div>
+      )}
+
       {/* Header */}
       <header className="bg-white border-b border-[#dadce0] p-4 sticky top-0 z-10 flex justify-between items-center shadow-md">
         <div className="flex items-center space-x-2">
