@@ -12,7 +12,7 @@
  *  5. Som de ACEITAR (beep verde) ou RECUSAR (beep vermelho) toca
  */
 
-import { GoogleGenerativeAI } from '@google/genai';
+import { GoogleGenAI } from '@google/genai';
 
 // ─── Extracted ride data ──────────────────────────────────────────────────────
 
@@ -73,8 +73,7 @@ export async function extractRideFromImage(
   try {
     const { data: base64Data, mimeType } = await fileToBase64(imageFile);
 
-    const genAI = new GoogleGenerativeAI(key);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const ai = new GoogleGenAI({ apiKey: key });
 
     const prompt = `
 Você é um sistema de extração de dados de corridas Uber e 99.
@@ -104,17 +103,20 @@ Regras:
 Se não conseguir identificar algum campo, use 0 para números e string vazia para textos.
 `.trim();
 
-    const result = await model.generateContent([
-      prompt,
-      {
-        inlineData: {
-          data: base64Data,
-          mimeType,
+    const response = await ai.models.generateContent({
+      model: 'gemini-1.5-flash',
+      contents: [
+        {
+          role: 'user',
+          parts: [
+            { text: prompt },
+            { inlineData: { data: base64Data, mimeType } },
+          ],
         },
-      },
-    ]);
+      ],
+    });
 
-    const rawText = result.response.text().trim();
+    const rawText = (response.text ?? '').trim();
 
     // Remove markdown code blocks se existirem
     const cleanJson = rawText
