@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
+import { User, onAuthStateChanged, signInWithRedirect, getRedirectResult, GoogleAuthProvider, signOut } from 'firebase/auth';
 import { auth, db } from '../lib/firebase';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 
@@ -15,28 +15,41 @@ const FirebaseContext = createContext<FirebaseContextType>({} as FirebaseContext
 
 export const useFirebase = () => useContext(FirebaseContext);
 
+const createUserDoc = async (currentUser: User) => {
+  const userRef = doc(db, `users/${currentUser.uid}`);
+  const userSnap = await getDoc(userRef);
+  if (!userSnap.exists()) {
+    await setDoc(userRef, {
+      email: currentUser.email || `${currentUser.uid}@fallback.net`,
+      displayName: currentUser.displayName || '',
+      activeProfileId: 'profile-intermediario',
+      activeCategoryId: 'X',
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+  }
+};
+
 export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-
   const [isSigningIn, setIsSigningIn] = useState(false);
 
   useEffect(() => {
+    // Handle redirect result when app loads after Google login
+    getRedirectResult(auth)
+      .then(async (result) => {
+        if (result?.user) {
+          await createUserDoc(result.user);
+        }
+      })
+      .catch((error) => {
+        console.error('Redirect result error:', error);
+      });
+
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
-         // Create or find user doc
-         const userRef = doc(db, `users/${currentUser.uid}`);
-         const userSnap = await getDoc(userRef);
-         if (!userSnap.exists()) {
-             await setDoc(userRef, {
-                 email: currentUser.email || `${currentUser.uid}@fallback.net`,
-                 displayName: currentUser.displayName || '',
-                 activeProfileId: 'profile-intermediario', // Default seed values
-                 activeCategoryId: 'X',
-                 createdAt: serverTimestamp(),
-                 updatedAt: serverTimestamp()
-             });
-         }
+        await createUserDoc(currentUser);
       }
       setUser(currentUser);
       setLoading(false);
@@ -49,16 +62,10 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setIsSigningIn(true);
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      await signInWithRedirect(auth, provider);
+      // Page will redirect — isSigningIn stays true until redirect completes
     } catch (error: any) {
-      if (error.code === 'auth/cancelled-popup-request') {
-        console.log('Sign in popup closed by user');
-      } else if (error.code === 'auth/popup-closed-by-user') {
-        console.log('Sign in popup closed by user');
-      } else {
-        console.error('Sign in error:', error);
-      }
-    } finally {
+      console.error('Sign in error:', error);
       setIsSigningIn(false);
     }
   };
